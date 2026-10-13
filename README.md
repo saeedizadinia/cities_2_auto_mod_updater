@@ -1,6 +1,6 @@
 # Cities: Skylines II Manual Mod Updater (Windows)
 
-A conservative updater for manually extracted folders such as `move-it_37` in the default Cities: Skylines II Mods folder. The program **does not subscribe to mods or alter Paradox playsets**.
+A conservative updater for manually extracted folders such as `move-it_*` in the default Cities: Skylines II Mods folder. The program **does not subscribe to mods or alter Paradox playsets**.
 
 ## Important status
 
@@ -9,14 +9,13 @@ A conservative updater for manually extracted folders such as `move-it_37` in th
 ## Setup
 
 1. Install Python 3.10+ for Windows. Check `py -3 --version`.
-2. WinRAR is optional for normal Paradox ZIP downloads. Install it (or change its path in config) only if the service supplies a RAR archive.
-3. Double-click `Install_Requirements.bat`.
-4. Double-click `Launch_GUI.bat`.
-5. Default folder: `%USERPROFILE%\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods`.
-6. Click **Auto-map IDs**, or simply click **Check Online (Preview)**. The updater searches Paradox Mods by folder name and saves only one unambiguous exact normalized-name match.
-7. Review the matches. If a search is ambiguous, fails, or chooses the wrong mod, select the folder and click **Edit Mod ID** to paste its official Paradox Mods URL (`https://mods.paradoxplaza.com/mods/74324/Windows`) or numeric ID. **No update is performed without a matching numeric online revision.**
-8. Close the game and click **Download & Install Updates**. Backups are saved outside the Mods folder.
-9. Optional: `Install_Monthly_Task.bat` makes a preview-only task for the first day of each month at 10 AM. Use the GUI or `Install_Updates.bat` for actual installation.
+2. Double-click `Install_Requirements.bat`.
+3. Double-click `Launch_GUI.bat`.
+4. Default folder: `%USERPROFILE%\AppData\LocalLow\Colossal Order\Cities Skylines II\Mods`.
+5. Click **Auto-map IDs**, or simply click **Check Online (Preview)**. The updater searches Paradox Mods by folder name and saves only one unambiguous exact normalized-name match.
+6. Review the matches. If a search is ambiguous, fails, or chooses the wrong mod, select the folder and click **Edit Mod ID** to paste its official Paradox Mods URL (`https://mods.paradoxplaza.com/mods/74324/Windows`) or numeric ID. **No update is performed without a matching numeric online revision.**
+7. Close the game and click **Download & Install Updates**. Backups are saved outside the Mods folder.
+8. Optional: `Install_Monthly_Task.bat` makes a preview-only task for the first day of each month at 10 AM. Use the GUI or `Install_Updates.bat` for actual installation.
 
 ## Detection and safety
 
