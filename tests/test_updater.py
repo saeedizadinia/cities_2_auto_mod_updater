@@ -72,4 +72,52 @@ class TestUpdater(unittest.TestCase):
         match, suggestions = u.find_mod_mapping(Client(), 'same-name', Path('.'))
         self.assertIsNone(match)
         self.assertEqual({x['modId'] for x in suggestions}, {'1', '2'})
+
+    def test_auto_map_skips_and_preserves_known_ids(self):
+        class Client:
+            def post(self, *args, **kwargs):
+                raise AssertionError('Known IDs must not be searched')
+
+        with tempfile.TemporaryDirectory() as td:
+            mods = Path(td) / 'Mods'
+            (mods / 'move-it_36').mkdir(parents=True)
+            cfg = {
+                'mods_dir': str(mods),
+                'mappings': {
+                    'move-it': {
+                        'mod_id': 74324,
+                        'name': 'Move It',
+                        'source': 'manual',
+                    }
+                },
+            }
+            before = dict(cfg['mappings']['move-it'])
+
+            mapped, unresolved = u.auto_map_mods(cfg, Client())
+
+            self.assertEqual((mapped, unresolved), (0, 0))
+            self.assertEqual(cfg['mappings']['move-it'], before)
+
+    def test_clear_backups_preserves_other_app_files(self):
+        original_app = u.APP
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                u.APP = Path(td) / 'app'
+                backup = u.APP / 'backups' / 'move-it' / 'move-it_36_stamp'
+                backup.mkdir(parents=True)
+                (backup / 'mod.dll').write_bytes(b'x' * 16)
+                receipts = u.APP / 'receipts'
+                receipts.mkdir()
+                (receipts / 'move-it.json').write_text('{}')
+                config = u.APP / 'config.json'
+                config.write_text('{}')
+
+                result = u.clear_backups()
+
+                self.assertIn('Cleared 1 backup files', result)
+                self.assertEqual(list((u.APP / 'backups').iterdir()), [])
+                self.assertEqual(list(receipts.iterdir()), [])
+                self.assertTrue(config.exists())
+        finally:
+            u.APP = original_app
 if __name__ == '__main__':unittest.main()

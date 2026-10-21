@@ -15,12 +15,13 @@ A conservative updater for manually extracted folders such as `move-it_*` in the
 5. Click **Auto-map IDs**, or simply click **Check Online (Preview)**. The updater searches Paradox Mods by folder name and saves only one unambiguous exact normalized-name match.
 6. Review the matches. If a search is ambiguous, fails, or chooses the wrong mod, select the folder and click **Edit Mod ID** to paste its official Paradox Mods URL (`https://mods.paradoxplaza.com/mods/74324/Windows`) or numeric ID. **No update is performed without a matching numeric online revision.**
 7. Close the game and click **Download & Install Updates**. Backups are saved outside the Mods folder.
-8. Optional: `Install_Monthly_Task.bat` makes a preview-only task for the first day of each month at 10 AM. Use the GUI or `Install_Updates.bat` for actual installation.
+8. Use **Clear Backups** to permanently remove all saved backup copies and rollback receipts after confirming they are no longer needed.
+9. Optional: `Install_Monthly_Task.bat` makes a preview-only task for the first day of each month at 10 AM. Use the GUI or `Install_Updates.bat` for actual installation.
 
 ## Detection and safety
 
 - Only directories ending in `_NUMBER` are detected. E.g. `move-it_37` -> slug `move-it`, local revision `37`.
-- Missing IDs are searched automatically by normalized folder/display name. Existing mappings are never overwritten, duplicate exact names remain unmapped, and the closest candidates and IDs are displayed for manual review.
+- Missing IDs are searched automatically by normalized folder/display name. **Auto-map IDs** neither searches nor changes folders that already have an ID. Duplicate exact names remain unmapped, and the closest candidates and IDs are displayed for manual review.
 - The API's `modDetail.modVersion` must be numeric, and `modDetail.displayName` must match the normalized folder name. The API's internal `name` value is used to construct the archive URL. Otherwise the updater skips it.
 - Downloads come from Paradox's own content domain; HTML and JSON responses are refused. ZIP archives are checked and extracted safely with Python in a temporary directory; WinRAR is retained only as a fallback for non-ZIP archives.
 - An original folder is moved to an application-specific backup before the replacement folder is promoted; failure to promote restores the original. Receipts and logs are written to `%LOCALAPPDATA%\CS2ManualModUpdater`.

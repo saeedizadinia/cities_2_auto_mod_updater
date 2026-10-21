@@ -84,6 +84,12 @@ def slug(text):
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", text.casefold())).strip("-")
 
 
+def is_link_like(path):
+    """Detect symlinks and, where supported by Python, Windows junctions."""
+    is_junction = getattr(path, "is_junction", None)
+    return path.is_symlink() or bool(is_junction and is_junction())
+
+
 def parse_folder(name):
     m = re.fullmatch(r"(.+)_([0-9]+)", name)
     if not m:
@@ -211,9 +217,7 @@ def find_mod_mapping(session, key, installed_path):
 
     ranked = sorted(
         candidates.values(),
-        key=lambda item: SequenceMatcher(
-            None, slug(item["displayName"]), key
-        ).ratio(),
+        key=lambda item: SequenceMatcher(None, slug(item["displayName"]), key).ratio(),
         reverse=True,
     )
     return None, ranked[:3]
@@ -261,8 +265,7 @@ def auto_map_mods(cfg, session, emit=lambda s: None):
             emit(f'Auto-mapped {key} -> {match["displayName"]} (ID {match["modId"]})')
         elif suggestions:
             choices = ", ".join(
-                f'{item["displayName"]} (ID {item["modId"]})'
-                for item in suggestions
+                f'{item["displayName"]} (ID {item["modId"]})' for item in suggestions
             )
             emit(f"Review {key} manually; closest results: {choices}")
         else:
@@ -484,7 +487,9 @@ def extract_zip(archive, destination):
                 seen.add(key)
                 mode = (info.external_attr >> 16) & 0xFFFF
                 if stat.S_ISLNK(mode):
-                    raise UpdaterError("Archive contains a symbolic link: " + info.filename)
+                    raise UpdaterError(
+                        "Archive contains a symbolic link: " + info.filename
+                    )
                 total_declared += info.file_size
                 if total_declared > MAX_UNPACKED:
                     raise UpdaterError("Extracted files exceed 4 GB limit")
@@ -535,7 +540,7 @@ def extract(archive, executable, destination):
     all_files = [p for p in destination.rglob("*") if p.is_file()]
     if not all_files:
         raise UpdaterError("Archive extracted no files")
-    if any(p.is_symlink() or p.is_junction() for p in destination.rglob("*")):
+    if any(is_link_like(p) for p in destination.rglob("*")):
         raise UpdaterError("Extracted archive contains links/junctions")
     total = sum(p.stat().st_size for p in all_files)
     if total > MAX_UNPACKED:
@@ -646,6 +651,53 @@ def rollback(key, cfg):
     # Keep failed update parked for manual examination; no silent deletion.
     receipt_file.unlink()
     return f"Restored {original.name}. Superseded update kept at {parked}"
+
+
+def clear_backups():
+    """Delete updater-owned backups and their now-unusable rollback receipts."""
+    app_root = APP.resolve()
+    backup_root = APP / "backups"
+    receipts_root = APP / "receipts"
+    if backup_root.name != "backups" or backup_root.parent.resolve() != app_root:
+        raise UpdaterError("Refusing to clear an unexpected backup path")
+    if backup_root.exists() and not backup_root.is_dir():
+        raise UpdaterError("Backup path is not a directory")
+    if is_link_like(backup_root):
+        raise UpdaterError("Refusing to clear a linked backup directory")
+    if receipts_root.exists() and not receipts_root.is_dir():
+        raise UpdaterError("Receipts path is not a directory")
+    if is_link_like(receipts_root):
+        raise UpdaterError("Refusing to clear a linked receipts directory")
+
+    files = 0
+    size = 0
+    if backup_root.exists():
+        for path in backup_root.rglob("*"):
+            if path.is_file() and not path.is_symlink():
+                files += 1
+                try:
+                    size += path.stat().st_size
+                except OSError:
+                    pass
+        for child in list(backup_root.iterdir()):
+            if is_link_like(child):
+                child.unlink()
+            elif child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    else:
+        backup_root.mkdir(parents=True)
+
+    # A receipt cannot support rollback after its referenced backup is removed.
+    if receipts_root.exists():
+        for receipt in receipts_root.glob("*.json"):
+            receipt.unlink()
+
+    mib = size / (1024 * 1024)
+    return (
+        f"Cleared {files} backup files ({mib:.1f} MiB). Rollback receipts were cleared."
+    )
 
 
 def execute(apply=False, callback=print):
